@@ -1,8 +1,7 @@
-import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../config/db";
 import dotenv from "dotenv";
+import { comparePassword, hashPassword } from "../utils/auth.utils";
 
 dotenv.config();
 
@@ -24,8 +23,7 @@ export const register = async (req, res) => {
     }
 
     // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await hashPassword(password);
 
     // Insert user into DB
     const newUser = await pool.query(
@@ -61,7 +59,7 @@ export const login = async (req, res) => {
     }
 
     // Compare password
-    const validPassword = await bcrypt.compare(password, user.rows[0].password);
+    const validPassword = await comparePassword(password, user.rows[0].password);
     if (!validPassword) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
