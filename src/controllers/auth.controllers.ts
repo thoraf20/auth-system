@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import pool from "../config/db";
 import dotenv from "dotenv";
-import { comparePassword, hashPassword } from "../utils/auth.utils";
+import { comparePassword, generateToken, hashPassword, transporter } from "../utils/auth.utils";
 
 dotenv.config();
 
@@ -80,5 +80,71 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate a reset token
+    const resetToken = generateToken();
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+
+    // Save the token and expiry in the database
+    await pool.query(
+      "UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3",
+      [resetToken, resetTokenExpiry, email]
+    );
+
+    // Send the reset email
+    const resetUrl = `http://localhost:3000/api/auth/reset-password/${resetToken}`;
+    await transporter.sendMail({
+      to: email,
+      subject: "Password Reset",
+      text: `You requested a password reset. Click the link to reset your password: ${resetUrl}`,
+    });
+
+    return res.status(200).json({ message: "Password reset email sent" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Reset Password Controller
+export const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    // Check if the token is valid and not expired
+    const { rows } = await pool.query(
+      'SELECT * FROM users WHERE reset_token = $1 AND reset_token_expiry > $2',
+      [token, Date.now()]
+    );
+    if (rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await hashPassword(newPassword)
+
+    // Update the user's password and clear the reset token
+    await pool.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = $2',
+      [hashedPassword, token]
+    );
+
+    return res.status(200).json({ message: 'Password reset successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
