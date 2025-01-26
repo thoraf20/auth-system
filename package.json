@@ -1,9 +1,11 @@
 {
   "name": "auth-system",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node ./dist/src/server.js",
+    "dev": "npm run build && nodemon ./src/server.ts"
   },
   "keywords": [],
   "author": "",
