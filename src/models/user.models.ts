@@ -1,11 +1,13 @@
 import pool from "../config/db";
 
+export type Role = "admin" | "user";
+
 export interface User {
   id: number;
   name: string;
   email: string;
   password: string;
-  role: "user" | "admin";
+  role: Role;
 }
 
 export const createUserTable = async () => {

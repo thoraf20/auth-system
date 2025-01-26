@@ -4,6 +4,7 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes"
+import dashboardRoutes from "./routes/admin.routes"
 import { createUserTable } from "./models/user.models";
 
 dotenv.config();
@@ -17,8 +18,8 @@ app.use(helmet());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/user", userRoutes);
-
+app.use("/api/user", userRoutes);
+app.use("/api/admin", dashboardRoutes);
 
 // Initialize Database
 createUserTable();
