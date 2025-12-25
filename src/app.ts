@@ -8,15 +8,15 @@ import userRoutes from "./routes/user.routes"
 import dashboardRoutes from "./routes/admin.routes"
 import { createUserTable } from "./models/user.models";
 import logger from "./utils/logger";
-import { connectRedis } from "./config/redis";
+import { redisClient } from "./config/redis";
+
 
 import { globalLimiter, authLimiter } from "./middlewares/rateLimit.middlewares";
 
 dotenv.config();
 
-connectRedis();
-
 const app = express();
+
 
 
 app.use(pinoHttp({ logger: logger as any }));
