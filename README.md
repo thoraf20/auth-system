@@ -66,7 +66,11 @@ Ensure you have the following installed:
 | POST   | `/api/auth/logout`        | User logout                |
 | POST   | `/api/auth/verify-email`  | Email verification         |
 | POST   | `/api/auth/reset-password`| Password reset request     |
-| POST   | `/api/auth/change-password`| Change password            |
+| POST   | `/api/auth/change-password`| Change password (Authenticated) |
+| POST   | `/api/auth/2fa/setup`     | Setup 2FA (Generate QR)    |
+| POST   | `/api/auth/2fa/verify`    | Enable 2FA (Verify Code)   |
+| POST   | `/api/auth/2fa/authenticate`| Final 2FA Login verification |
+
 
 ### **User Management**
 | Method | Endpoint             | Description          |
