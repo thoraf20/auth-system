@@ -10,7 +10,6 @@ router.post("/login", login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
-// Profile Update Route (protected)
 router.put('/profile', authenticate, updateProfile);
 
 export default router;
