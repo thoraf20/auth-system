@@ -203,17 +203,32 @@ export const refreshToken = async (req, res) => {
   }
 };
 
+import { redisClient } from "../config/redis";
+
 export const logout = async (req, res) => {
-  const { token } = req.body;
+  const authHeader = req.header("Authorization");
+  const accessToken = authHeader?.split(" ")[1];
+  const { token: refreshToken } = req.body;
+
   try {
-    await pool.query("UPDATE users SET refresh_token = NULL WHERE refresh_token = $1", [token]);
-    logger.info("User logged out");
+    // Blacklist access token in Redis for 1 hour (default expiry)
+    if (accessToken) {
+      await redisClient.set(`blacklist:${accessToken}`, "true", {
+        EX: 3600, // 1 hour
+      });
+    }
+
+    // Invalidate refresh token in DB
+    await pool.query("UPDATE users SET refresh_token = NULL WHERE refresh_token = $1", [refreshToken]);
+    
+    logger.info({ accessToken: !!accessToken, refreshToken: !!refreshToken }, "User logged out and token blacklisted");
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     logger.error({ error }, "Logout error");
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const verifyEmail = async (req, res) => {
   const { token } = req.params;

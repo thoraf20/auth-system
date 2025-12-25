@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { redisClient } from "../config/redis";
 
 dotenv.config();
 
@@ -16,24 +17,33 @@ declare global {
 }
 
 // Authentication Middleware
-export const authenticate = (
-  req,
-  res,
-  next
+export const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
 ) => {
   const token = req.header("Authorization")?.split(" ")[1];
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Access denied. No token provided." });
+    res.status(401).json({ message: "Access denied. No token provided." });
+    return;
   }
 
   try {
+    // Check if token is blacklisted in Redis
+    const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+    if (isBlacklisted) {
+      res.status(401).json({ message: "Token has been revoked. Please log in again." });
+      return;
+    }
+
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Invalid or expired token." });
+    res.status(403).json({ message: "Invalid or expired token." });
+    return;
   }
 };
+
+
